@@ -31,7 +31,7 @@ phases:
     commands:
       - printf 'IMAGE_URI=%s\nECR_REGION=%s\n' "${IMAGE_URI}" "${ECR_REGION}" > image_uri.env
       - mkdir -p deploy-bundle/scripts
-      - cp frontend-appspec.yaml deploy-bundle/appspec.yaml
+      - cp frontend-appspec.yml deploy-bundle/appspec.yml
       - cp image_uri.env deploy-bundle/image_uri.env
       - cp scripts/frontend_*.sh deploy-bundle/scripts/
       - chmod 755 deploy-bundle/scripts/*.sh

@@ -61,7 +61,7 @@ The image uses `nginx:1.27-alpine`, serves `dist/`, and proxies `/api`, `/sanctu
 Included pipeline assets:
 
 - `buildspec.yml` — installs dependencies, builds `dist/`, builds/pushes the image, packages the CodeDeploy revision, and starts the deployment.
-- `frontend-appspec.yaml` — CodeDeploy hooks.
+- `frontend-appspec.yml` — CodeDeploy hooks.
 - `scripts/frontend_*.sh` — stop, pull, start, and validate the container.
 - `Dockerfile` and `frontend-nginx.conf`.
 
