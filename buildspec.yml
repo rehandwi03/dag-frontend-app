@@ -1,0 +1,41 @@
+version: 0.2
+
+env:
+  variables:
+    GITLEAKS_VERSION: "8.18.4"
+    TRIVY_VERSION: "0.50.1"
+    TRIVY_SEVERITY: "HIGH,CRITICAL"
+    VITE_API_BASE_URL: "/api"
+
+phases:
+  install:
+    runtime-versions:
+      nodejs: 20
+    commands:
+      - echo "Installing frontend dependencies"
+      - npm ci
+  pre_build:
+    commands:
+      - npm run lint --if-present
+      - npm test --if-present
+      - npm run build
+      - test -f dist/index.html
+      - IMAGE_TAG=$(echo "${CODEBUILD_RESOLVED_SOURCE_VERSION:-latest}" | cut -c1-12)
+      - IMAGE_URI="${ECR_REPOSITORY_URI}:${IMAGE_TAG}"
+      - aws ecr get-login-password --region "${ECR_REGION}" | docker login --username AWS --password-stdin "${ECR_REPOSITORY_URI%%/*}"
+  build:
+    commands:
+      - docker build --pull -t "${IMAGE_URI}" .
+      - docker push "${IMAGE_URI}"
+  post_build:
+    commands:
+      - printf 'IMAGE_URI=%s\nECR_REGION=%s\n' "${IMAGE_URI}" "${ECR_REGION}" > image_uri.env
+      - mkdir -p deploy-bundle/scripts
+      - cp frontend-appspec.yaml deploy-bundle/appspec.yaml
+      - cp image_uri.env deploy-bundle/image_uri.env
+      - cp scripts/frontend_*.sh deploy-bundle/scripts/
+      - chmod 755 deploy-bundle/scripts/*.sh
+      - REVISION_KEY="deployments/frontend-${IMAGE_TAG}.zip"
+      - cd deploy-bundle && zip -r "../frontend-${IMAGE_TAG}.zip" . && cd ..
+      - aws s3 cp "frontend-${IMAGE_TAG}.zip" "s3://${APPSPEC_S3_BUCKET}/${REVISION_KEY}" --region "${ECR_REGION}"
+      - aws deploy create-deployment --application-name "${CODEDEPLOY_APPLICATION_NAME}" --deployment-group-name "${CODEDEPLOY_DEPLOYMENT_GROUP_NAME}" --s3-location "bucket=${APPSPEC_S3_BUCKET},key=${REVISION_KEY},bundleType=zip" --region "${ECR_REGION}"

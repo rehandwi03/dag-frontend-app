@@ -1,0 +1,15 @@
+.git
+.github
+.idea
+.vscode
+.env
+.env.*
+!.env.example
+node_modules
+README.md
+buildspec.yml
+frontend-appspec.yaml
+scripts
+Dockerfile*
+docker-compose*.yml
+*.log
